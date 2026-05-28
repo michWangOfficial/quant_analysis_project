@@ -1,6 +1,56 @@
-run "python -m venv .venv" to load a venv
-run ".\.venv\Scripts\Activate.ps1" in the terminal to activate the venv
-run "pip install -r requirements.txt" to download all the packaged required
+run "python -m venv .venv" to load a venv 
 
-to clean daily data, run "python scripts/clean_raw_data.py" in the terminal
+run ".\ .venv\Scripts\Activate.ps1" to activate the venv 
 
+run "pip install -r requirements.txt" to download all the packaged required 
+
+run "python scripts/clean_raw_data.py "date" " to clean daily data
+
+All variables in capitol_flow_clean.py:
+
+| 列名                    | 原始含义   | 解释              | 短线分析作用                            |
+| --------------------- | ------ | --------------- | --------------------------------- |
+| `trade_date`          | 交易日期   | 这条数据属于哪一天       | merge 的时间键；后面做多日回测、隔日涨跌预测必须有      |
+| `code`                | 代码     | 6 位股票代码         | merge 的股票键；所有表都按它对齐               |
+| `name`                | 名称     | 股票名称            | 用于人工识别；也可以辅助识别 ST、XD、退市风险等        |
+| `close`               | 最新     | 当前/收盘价格         | 当日价格基准；判断买入价、止损位、突破位              |
+| `pct_chg`             | 涨幅%    | 当日涨跌幅百分比        | 最核心短线动量指标；筛选强势股、涨停股、异动股           |
+| `price_change`        | 涨跌     | 当日价格涨跌额         | 配合 `close` 看实际波动幅度；低价股涨跌额小但百分比可能大 |
+| `total_volume_lot`    | 总量     | 当日总成交量，单位通常是“手” | 判断是否放量；短线必须看量价配合                  |
+| `current_volume_lot （excluded）`  | 现量     | 当前这一笔/当前时点成交量   | 盘中判断是否突然放量、是否有瞬时冲击                |
+| `bid_price （excluded）`           | 买入价    | 当前买一附近买入价       | 看买盘承接价位；也可判断盘口是否贴近涨停/跌停           |
+| `ask_price （excluded）`           | 卖出价    | 当前卖一附近卖出价       | 看卖压；买卖价差过大说明流动性差                  |
+| `speed_pct （excluded）`           | 涨速%    | 短时间内价格变化速度      | 盘中追踪异动很重要；突然涨速拉升可能是启动信号，也可能是冲高回落  |
+| `turnover_rate`       | 换手%    | 当日换手率           | 判断筹码活跃度；短线强势股通常需要一定换手，但过高也可能是出货   |
+| `amount`              | 金额     | 当日成交额           | 比成交量更适合跨股比较；成交额太小的票短线容易滑点大        |
+| `pe_ttm`              | 市盈率(动) | 动态市盈率           | 短线不是第一优先，但能过滤极端亏损/高估值炒作票          |
+| `industry`            | 所属行业   | 股票所属行业/板块       | 判断是不是板块联动；短线选股最好看板块共振             |
+| `high`                | 最高     | 当日最高价           | 判断上影线、冲高失败、突破压力位                  |
+| `low`                 | 最低     | 当日最低价           | 判断下影线、承接位、盘中洗盘幅度                  |
+| `open`                | 开盘     | 当日开盘价           | 判断高开/低开；高开低走和低开高走含义完全不同           |
+| `pre_close`           | 昨收     | 前一交易日收盘价        | 计算跳空、高开低开、涨跌幅基准                   |
+| `amplitude`           | 振幅%    | 当日最高到最低的波动幅度    | 判断波动强度；振幅大说明资金分歧大，适合短线但风险也高       |
+| `volume_ratio`        | 量比     | 当前成交活跃度相对过去平均水平 | 盘中非常重要；量比放大说明资金关注度上升              |
+| `order_ratio （excluded）`         | 委比%    | 委托买卖盘强弱比例       | 看盘口买卖意愿；正值偏买盘，负值偏卖盘，但容易被挂单迷惑      |
+| `order_diff （excluded）`          | 委差     | 委买量减委卖量         | 看盘口净买卖压力；适合盘中辅助，不适合单独决策           |
+| `avg_price`           | 均价     | 当日成交均价          | 判断当前价相对成本区；站上均价偏强，跌破均价偏弱          |
+| `inner_volume_lot （excluded）`    | 内盘     | 主动卖出成交量         | 内盘大说明主动卖盘多；下跌时内盘放大偏弱              |
+| `outer_volume_lot （excluded）`    | 外盘     | 主动买入成交量         | 外盘大说明主动买盘多；上涨时外盘放大偏强              |
+| `inner_outer_ratio （excluded）`   | 内外比    | 内盘 / 外盘 比值      | 判断主动买卖力量对比；小于 1 通常说明外盘更强          |
+| `bid1_volume_lot （excluded）`     | 买一量    | 买一档挂单量          | 看最近买盘承接；大买一可能是支撑，也可能是诱多挂单         |
+| `ask1_volume_lot （excluded）`     | 卖一量    | 卖一档挂单量          | 看最近卖压；卖一量大说明上方抛压重                 |
+| `pb`                  | 市净率    | 市值 / 净资产        | 短线作用较弱，主要用于低估值、防御板块过滤             |
+| `total_shares`        | 总股本    | 公司总股份数量         | 判断盘子大小；大盘股波动慢，小盘股更容易短线异动          |
+| `total_market_cap`    | 总市值    | 总股本 × 股价        | 判断股票体量；短线爆发通常中小市值更敏感              |
+| `float_shares`        | 流通股本   | 可交易流通股份         | 判断实际可交易筹码规模                       |
+| `float_market_cap`    | 流通市值   | 流通股本 × 股价       | 短线比总市值更重要；流通市值越小越容易被资金推动          |
+| `pct_chg_3d`          | 3日涨幅%  | 最近 3 日累计涨幅      | 判断短期动量；太高可能追高，温和放量上涨更健康           |
+| `pct_chg_6d`          | 6日涨幅%  | 最近 6 日累计涨幅      | 判断一周级别趋势；适合找刚启动还是已加速              |
+| `turnover_3d`         | 3日换手%  | 最近 3 日累计换手      | 判断短期筹码交换是否充分                      |
+| `turnover_6d`         | 6日换手%  | 最近 6 日累计换手      | 判断一周资金活跃度；过高可能说明分歧大               |
+| `consecutive_up_days` | 连涨天数   | 连续上涨的交易日数量      | 判断强势持续性；连涨太多容易短线回调                |
+| `pct_chg_this_month`  | 本月涨幅%  | 当月累计涨幅          | 判断月内位置；涨幅过高要防止补跌                  |
+| `pct_chg_this_year`   | 今年涨幅%  | 年初至今涨幅          | 判断中期强弱；短线可用来区分强趋势股和超跌反弹股          |
+| `pct_chg_1m`          | 近一月涨幅% | 最近一个月涨幅         | 判断当前是不是月线级别强势股                    |
+| `pct_chg_1y`          | 近一年涨幅% | 最近一年涨幅          | 判断长期位置；一年涨幅过大可能估值/情绪拥挤            |
+| `is_st`               | ST标记   | 名称中是否包含 ST      | 风险过滤字段；短线模型最好单独处理或直接剔除 ST         |
