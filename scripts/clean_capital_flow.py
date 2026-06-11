@@ -59,7 +59,7 @@ def clean_capital_flow(input_file, output_file, trade_date):
         "cf_pct_chg",
 
         "main_net_inflow",
-        "main_net_inflow_pct",
+        "call_auction_net_inflow",
 
         "super_large_inflow",
         "super_large_outflow",
